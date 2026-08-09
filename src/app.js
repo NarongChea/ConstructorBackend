@@ -34,9 +34,9 @@ const app = express();
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
-  credentials: true,
-}));
+  origin: 'https://narongchea.github.io', // your frontend
+  credentials: true
+}))
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 const limiter = rateLimit({
