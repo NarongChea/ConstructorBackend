@@ -27,7 +27,6 @@ import partnerRoutes     from "./routes/Partner.routes.js";    // was: partner.r
 import userPriceRoutes   from "./routes/Userprice.routes.js";  // was: userPrice.routes.js
 import settingRoutes     from "./routes/setting.routes.js";    // NEW: exchange rate + global settings
 import { errorHandler }  from "./middleware/errorHandler.middleware.js";
-import invoiceRouter from './routes/invoice.routes.js'
 import cartDraftRoutes from './routes/cartDraftRoutes.js'
 const app = express();
 
@@ -79,7 +78,6 @@ app.use("/api/purchases",     purchaseRoutes);
 app.use("/api/dashboard",     dashboardRoutes);
 app.use("/api/reports",       reportRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
-app.use('/api/invoices', invoiceRouter)
 // ── New ───────────────────────────────────────────────────────────────────────
 app.use("/api/unit-types",    unitTypeRoutes);  // GET/POST/PATCH/DELETE unit types & measurements
 app.use("/api/partners",      partnerRoutes);   // partner CRUD + balance + transactions
