@@ -1691,3 +1691,5 @@ MongoServerError: Plan executor error during findAndModify :: caused by :: E1100
     at async updateVariant (file:///D:/construction-backend-V-1/construction-backend-updated/src/controllers/variant.controller.js:51:21)
 2026-08-09 13:18:47 [[32minfo[39m]: MongoDB connected: ac-txgfmyu-shard-00-01.4bjwysu.mongodb.net
 2026-08-09 13:18:47 [[32minfo[39m]: Server running in development mode on port 5000
+2026-09-01 13:04:00 [[32minfo[39m]: MongoDB connected: ac-txgfmyu-shard-00-02.4bjwysu.mongodb.net
+2026-09-01 13:04:00 [[32minfo[39m]: Server running in development mode on port 5000

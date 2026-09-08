@@ -1,5 +1,20 @@
 import mongoose from "mongoose";
 
+// ── Sheet-metal (ស័ង្កសី) segment sub-schema — one length entry ──
+const invoiceSegmentSchema = new mongoose.Schema(
+  {
+    length:          Number,
+    qty:             Number,
+    type:            String, // 'straight' | 'curved' | 'flat'
+    typeLabel:       String, // 'ត្រង់' | 'កោង' | 'លាត'
+    extra1:          { type: Number, default: 0 }, // ចោលចុង (curved only, record-keeping)
+    extra2:          { type: Number, default: 0 }, // កោង (curved only, record-keeping)
+    effectiveLength: Number,
+    subtotal:        Number,
+  },
+  { _id: false }
+);
+
 const invoiceItemSchema = new mongoose.Schema(
   {
     variantId:   { type: mongoose.Schema.Types.ObjectId, ref: "ProductVariant" }, // nullable for custom items
@@ -24,6 +39,13 @@ const invoiceItemSchema = new mongoose.Schema(
     unitPrice:   { type: Number, required: true, min: 0 },
     subtotal:    { type: Number, required: true, min: 0 },
     isCustom:    { type: Boolean, default: false },
+
+    // ── Sheet-metal (ស័ង្កសី) support ──
+    // When true, this item is printed/displayed as a header row (product
+    // name only) followed by one row per length entry in `segments`,
+    // instead of a normal flat qty/price/subtotal row.
+    isSheetMetal: { type: Boolean, default: false },
+    segments:     [invoiceSegmentSchema],
   },
   { _id: false }
 );
@@ -76,24 +98,14 @@ const invoiceSchema = new mongoose.Schema(
     totalUSD:          { type: Number, default: 0, min: 0 },
 
     // ── Deposit ───────────────────────────────────────────────────────────────
-    // For "KHR"/"USD" mode: depositAmount is in invoice.currency, remainingAmount likewise.
-    //   The customer may pay in the OTHER currency — it gets converted using the
-    //   appropriate rate before being applied here, so depositAmount always ends
-    //   up expressed in invoice.currency.
     depositAmount:   { type: Number, default: 0, min: 0 },
     remainingAmount: { type: Number, default: 0, min: 0 },
 
-    // For "BOTH" mode: a single payment can cascade across both currency buckets
-    // (pay its own currency's bucket first, then convert any leftover into the
-    // other bucket). depositKHR/depositUSD record how much ended up applied to
-    // each bucket. depositInputAmount/depositInputCurrency record what the
-    // customer actually handed over, for receipts/audit purposes.
     depositKHR:          { type: Number, default: 0, min: 0 },
     depositUSD:          { type: Number, default: 0, min: 0 },
     depositInputAmount:  { type: Number, default: 0, min: 0 },
     depositInputCurrency:{ type: String, enum: ["KHR", "USD"], default: null },
 
-    // Remaining amounts per bucket when currency === "BOTH" (derived, kept for fast reads)
     remainingKHR: { type: Number, default: 0, min: 0 },
     remainingUSD: { type: Number, default: 0, min: 0 },
 

@@ -193,34 +193,106 @@ export const createInvoice = async (req, res, next) => {
         unitPrice = resolved.price; priceType = resolved.priceType;
       }
 
-      const itemSubtotal = item.quantity * unitPrice;
-      // In BOTH mode, the item's own variant.currency is authoritative (native, unconverted).
-      // In KHR/USD mode, the frontend already converted unitPrice into invoice.currency.
-      const itemCurrency = currency === "BOTH" ? (variant.currency || "KHR") : currency;
+// ── Sheet-metal (ស័ង្កសី) ─────────────────────────────────────────────
+const isSheetMetal = item.isSheetMetal === true;
 
-      if (currency === "BOTH") {
-        if (itemCurrency === "USD") subtotalUSD += itemSubtotal; else subtotalKHR += itemSubtotal;
-      } else {
-        subtotal += itemSubtotal;
-      }
+const segments = isSheetMetal && Array.isArray(item.segments)
+  ? item.segments.map((seg) => {
+      const length = Number(seg.length) || 0;
+      const qty = Number(seg.qty) || 0;
 
-      const productDoc = await Product.findById(variant.productId).select("name attributes").session(session);
+      // effectiveLength is normally the same as length,
+      // but keep it if it was calculated by the frontend.
+      const effectiveLength =
+        Number(seg.effectiveLength) || length;
 
-      let unitTypeName = null;
-      if (variant.unitTypeId) {
-        const { default: UnitType } = await import("../models/UnitType.js");
-        const ut = await UnitType.findById(variant.unitTypeId).select("displayName name").session(session);
-        unitTypeName = ut?.displayName || ut?.name || null;
-      }
+      const subtotal =
+        effectiveLength * qty * unitPrice;
 
-      invoiceItems.push({
-        variantId: variant._id, productId: variant.productId,
-        sku: variant.sku, productName: productDoc?.name || "Unknown",
-        brand: variant.brand, unit: variant.unit, unitValue: variant.unitValue, unitTypeName,
-        attributes: productDoc?.attributes || [],
-        quantity: item.quantity, priceType, currency: itemCurrency,
-        unitPrice, subtotal: itemSubtotal, isCustom: false,
-      });
+      return {
+        length,
+        qty,
+        type: seg.type || "straight",
+        typeLabel: seg.typeLabel || "",
+        extra1: Number(seg.extra1) || 0,
+        extra2: Number(seg.extra2) || 0,
+        effectiveLength,
+        subtotal,
+      };
+    })
+  : [];
+
+// For normal products:
+//     quantity × unitPrice
+//
+// For ស័ង្កសី:
+//     sum of all segment meters × price per meter
+const itemSubtotal = isSheetMetal && segments.length > 0
+  ? segments.reduce((sum, seg) => sum + seg.subtotal, 0)
+  : item.quantity * unitPrice;
+
+// In BOTH mode, the item's own variant.currency is authoritative.
+const itemCurrency =
+  currency === "BOTH"
+    ? (variant.currency || "KHR")
+    : currency;
+
+if (currency === "BOTH") {
+  if (itemCurrency === "USD") {
+    subtotalUSD += itemSubtotal;
+  } else {
+    subtotalKHR += itemSubtotal;
+  }
+} else {
+  subtotal += itemSubtotal;
+}
+
+const productDoc = await Product
+  .findById(variant.productId)
+  .select("name attributes")
+  .session(session);
+
+let unitTypeName = null;
+
+if (variant.unitTypeId) {
+  const { default: UnitType } =
+    await import("../models/UnitType.js");
+
+  const ut = await UnitType
+    .findById(variant.unitTypeId)
+    .select("displayName name")
+    .session(session);
+
+  unitTypeName = ut?.displayName || ut?.name || null;
+}
+
+invoiceItems.push({
+  variantId: variant._id,
+  productId: variant.productId,
+
+  sku: variant.sku,
+  productName: productDoc?.name || "Unknown",
+
+  brand: variant.brand,
+  unit: variant.unit,
+  unitValue: variant.unitValue,
+  unitTypeName,
+
+  attributes: productDoc?.attributes || [],
+
+  quantity: item.quantity,
+  priceType,
+  currency: itemCurrency,
+
+  unitPrice,
+  subtotal: itemSubtotal,
+
+  isCustom: false,
+
+  // ── IMPORTANT: preserve ស័ង្កសី data ──
+  isSheetMetal,
+  segments,
+});
 
       const previousStock = variant.stock;
       variant.stock -= item.quantity;

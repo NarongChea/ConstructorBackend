@@ -28,7 +28,7 @@ import userPriceRoutes   from "./routes/Userprice.routes.js";  // was: userPrice
 import settingRoutes     from "./routes/setting.routes.js";    // NEW: exchange rate + global settings
 import { errorHandler }  from "./middleware/errorHandler.middleware.js";
 import invoiceRouter from './routes/invoice.routes.js'
-
+import cartDraftRoutes from './routes/cartDraftRoutes.js'
 const app = express();
 
 // ── Security ──────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ app.use("/api/unit-types",    unitTypeRoutes);  // GET/POST/PATCH/DELETE unit ty
 app.use("/api/partners",      partnerRoutes);   // partner CRUD + balance + transactions
 app.use("/api/user-prices",   userPriceRoutes); // custom per-user/partner prices
 app.use("/api/settings",      settingRoutes);   // exchange rate + global settings
-
+app.use('/api/cart-draft', cartDraftRoutes)
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.all("*", (req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
